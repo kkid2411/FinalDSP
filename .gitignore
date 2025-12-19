@@ -1,0 +1,31 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+
+# Flask instance and uploads
+instance/
+uploads/
+
+# OS / editor
+.DS_Store
+.vscode/
+
+# Logs
+*.log
+
+# Coverage / test
+htmlcov/
+.coverage*
+.pytest_cache/
+
+# Build
+build/
+dist/
+*.egg-info/

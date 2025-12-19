@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Audio Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <div class="app">
+      <header class="top-bar">
+        <div class="top-left">
+          <button class="btn">Open File</button>
+          <button class="btn">Add to List</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="left-pane">
+          <div class="panel wave-panel">
+            <div class="panel-header">
+              <div class="title">
+                <span class="track-name">Chưa chọn bài</span>
+              </div>
+            </div>
+            <div class="panel-body waveform">
+              <canvas id="waveform"></canvas>
+            </div>
+          </div>
+
+          <div class="panel fft-panel">
+            <div class="panel-header">
+              <span>FFT Spectrum</span>
+              <div class="switch-row">
+                <span>Auto-EQ</span>
+                <label class="switch">
+                  <input type="checkbox" checked />
+                  <span class="slider"></span>
+                </label>
+              </div>
+            </div>
+            <div class="panel-body">
+              <canvas id="fft"></canvas>
+            </div>
+          </div>
+
+          <div class="panel eq-curve-panel">
+            <div class="panel-header">
+              <span>EQ Frequency Response</span>
+              <span class="pill">Log scale</span>
+            </div>
+            <div class="panel-body">
+              <canvas id="eq-curve"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <aside class="right-pane">
+          <div class="panel playlist-panel">
+            <div class="panel-header">
+              <span>Playlist Manager</span>
+            </div>
+            <div class="panel-body playlist-list">
+              <div class="playlist-item active">
+                <div class="icon play"></div>
+                <div class="info">
+                  <span class="name">Kepler</span>
+                  <span class="tag">Instrumental</span>
+                </div>
+              </div>
+              <div class="playlist-item">
+                <div class="icon play"></div>
+                <div class="info">
+                  <span class="name">Cassini</span>
+                  <span class="tag">Instrumental</span>
+                </div>
+              </div>
+              <div class="playlist-item">
+                <div class="icon play"></div>
+                <div class="info">
+                  <span class="name">Galileo</span>
+                  <span class="tag">Instrumental</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel autoeq-panel">
+            <div class="panel-row">
+              <span>Auto-EQ</span>
+              <span class="value">OFF</span>
+            </div>
+            <div class="panel-row">
+              <span>Mode</span>
+              <span class="value">Music</span>
+            </div>
+            <div class="panel-row">
+              <span>Preset Library</span>
+              <span class="value">Save</span>
+            </div>
+            <div class="panel-row">
+              <span>Show Original</span>
+              <label class="switch small">
+                <input type="checkbox" id="showOriginalToggle" checked />
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="panel vertical-eq-panel">
+            <div class="panel-body eq-bars">
+              <div class="eq-column">
+                <span class="freq">63</span>
+                <div class="eq-bar">
+                  <div class="fill" style="height: 40%"></div>
+                </div>
+              </div>
+              <div class="eq-column">
+                <span class="freq">125</span>
+                <div class="eq-bar">
+                  <div class="fill" style="height: 60%"></div>
+                </div>
+              </div>
+              <div class="eq-column">
+                <span class="freq">250</span>
+                <div class="eq-bar">
+                  <div class="fill" style="height: 35%"></div>
+                </div>
+              </div>
+              <div class="eq-column">
+                <span class="freq">500</span>
+                <div class="eq-bar">
+                  <div class="fill" style="height: 70%"></div>
+                </div>
+              </div>
+              <div class="eq-column">
+                <span class="freq">1k</span>
+                <div class="eq-bar">
+                  <div class="fill" style="height: 45%"></div>
+                </div>
+              </div>
+              <div class="eq-column">
+                <span class="freq">2k</span>
+                <div class="eq-bar">
+                  <div class="fill" style="height: 50%"></div>
+                </div>
+              </div>
+              <div class="eq-column">
+                <span class="freq">4k</span>
+                <div class="eq-bar">
+                  <div class="fill" style="height: 55%"></div>
+                </div>
+              </div>
+              <div class="eq-column">
+                <span class="freq">8k</span>
+                <div class="eq-bar">
+                  <div class="fill" style="height: 30%"></div>
+                </div>
+              </div>
+              <div class="eq-column">
+                <span class="freq">16k</span>
+                <div class="eq-bar">
+                  <div class="fill" style="height: 65%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="bottom-bar">
+        <div class="transport">
+          <button class="circle-btn" id="playPauseBtn" title="Play/Pause">
+            <svg
+              class="play-icon"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              style="display: block"
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            <svg
+              class="pause-icon"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              style="display: none"
+            >
+              <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+            </svg>
+          </button>
+          <button class="square-btn" id="stopBtn" title="Stop">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 6h12v12H6z" />
+            </svg>
+          </button>
+          <span class="time-label">0:34</span>
+        </div>
+        <div class="seekbar">
+          <div class="track"></div>
+          <div class="thumb"></div>
+        </div>
+        <span class="time-label right">0:34 250</span>
+      </footer>
+    </div>
+
+    <div id="loadingOverlay" class="loading-overlay hidden">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Đang xử lý...</div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+  </body>
+</html>

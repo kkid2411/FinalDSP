@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Query Detection & Generation</title>
+
+    <style>
+      body {
+        font-family: sans-serif;
+        background: #f3f3f3;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 6px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 22px;
+        margin-bottom: 10px;
+      }
+
+      textarea {
+        width: 90%;
+        max-width: 900px;
+        height: 140px;
+        padding: 10px;
+        font-family: monospace;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        resize: vertical;
+        text-align: left;
+        margin: 10px auto 0;
+      }
+
+      button {
+        padding: 8px 18px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 600;
+        margin-right: 8px;
+      }
+
+      .btn-run {
+        background: #1976d2;
+        color: white;
+      }
+
+      .btn-clear {
+        background: #999;
+        color: white;
+      }
+
+      .btn-schema {
+        background: #4caf50;
+        color: white;
+      }
+
+      .section {
+        margin-top: 20px;
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+        margin-top: 10px;
+      }
+
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        background: white;
+        text-align: left;
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 6px 10px;
+        font-size: 14px;
+      }
+
+      th {
+        background: #1976d2;
+        color: white;
+        white-space: nowrap;
+      }
+
+      tr:nth-child(even) {
+        background: #fafafa;
+      }
+
+      .error {
+        margin-top: 10px;
+        padding: 10px;
+        background: #ffd9d9;
+        border-left: 4px solid #d32f2f;
+      }
+
+      .example {
+        background: #f8f8f8;
+        padding: 6px;
+        margin-bottom: 6px;
+        font-family: monospace;
+        border-left: 3px solid #1976d2;
+        cursor: pointer;
+      }
+
+      .examples-columns {
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+        margin-top: 10px;
+        text-align: left;
+      }
+
+      .examples-col {
+        flex: 1;
+      }
+
+      .examples-col h3 {
+        text-align: center;
+        margin-bottom: 8px;
+      }
+
+      .toggle-header {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .generated-sql {
+        margin-top: 10px;
+        padding: 10px;
+        background: #e3f2fd;
+        border-left: 4px solid #1976d2;
+        border-radius: 4px;
+      }
+
+      .generated-sql code {
+        font-family: monospace;
+        font-size: 13px;
+        background: white;
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+
+      .thinking-process {
+        margin-top: 15px;
+        padding: 15px;
+        background: #f5f5f5;
+        border-left: 4px solid #ff9800;
+        border-radius: 4px;
+      }
+
+      .thinking-process h3 {
+        margin-top: 0;
+        margin-bottom: 10px;
+        font-size: 16px;
+        color: #ff9800;
+      }
+
+      .thinking-round {
+        margin-bottom: 15px;
+        padding: 10px;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+      }
+
+      .thinking-round h4 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: #666;
+      }
+
+      .thinking-original {
+        color: #666;
+        font-style: italic;
+        margin-bottom: 5px;
+      }
+
+      .thinking-refined {
+        color: #1976d2;
+        font-weight: 600;
+        margin-bottom: 5px;
+      }
+
+      .thinking-detail {
+        color: #888;
+        font-size: 12px;
+        margin-top: 5px;
+        padding: 5px;
+        background: #fafafa;
+        border-radius: 3px;
+      }
+
+      .refined-question {
+        margin-top: 10px;
+        padding: 10px;
+        background: #e8f5e9;
+        border-left: 4px solid #4caf50;
+        border-radius: 4px;
+      }
+
+      .input-type {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 3px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-left: 10px;
+      }
+
+      .input-type.sql {
+        background: #4caf50;
+        color: white;
+      }
+
+      .input-type.nlp {
+        background: #ff9800;
+        color: white;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+      }
+
+      .loading::after {
+        content: "...";
+        animation: dots 1.5s steps(4, end) infinite;
+      }
+
+      @keyframes dots {
+        0%,
+        20% {
+          content: ".";
+        }
+        40% {
+          content: "..";
+        }
+        60%,
+        100% {
+          content: "...";
+        }
+      }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+      <h1>Query Interface - SQL & NLP</h1>
+      <p style="color: #666; font-size: 14px; margin-bottom: 15px">
+        You can enter SQL directly or ask questions in natural language. The
+        system will automatically detect and process.
+      </p>
+
+      <div id="schema" class="section">
+        <h2 class="toggle-header" onclick="toggleSchema()">Schema</h2>
+        <div id="schema-content"></div>
+      </div>
+
+      <div id="examples" class="section">
+        <h2 class="toggle-header" onclick="toggleExamples()">
+          Example Queries
+        </h2>
+        <div id="examples-content"></div>
+      </div>
+
+      <textarea
+        id="queryInput"
+        placeholder="SQL Example: SELECT * FROM videos LIMIT 10;&#10;NLP Example: How many videos are in the database?"
+      ></textarea>
+
+      <p>
+        <button class="btn-run" onclick="executeQuery()">Run Query</button>
+        <button class="btn-clear" onclick="clearQuery()">Clear</button>
+        <span style="color: #444; margin-left: 10px"
+          >(Ctrl + Enter to run)</span
+        >
+      </p>
+
+      <div id="results" class="section"></div>
+    </div>
+
+    <script>
+      window.onload = () => loadSchema();
+
+      async function loadSchema() {
+        const res = await fetch("/api/schema");
+        const schema = await res.json();
+
+        // Schema text
+        let html = "";
+        for (const [table, info] of Object.entries(schema.tables)) {
+          html += `<p><strong>${table}</strong>: ${info.columns.join(", ")}</p>`;
+        }
+        document.getElementById("schema-content").innerHTML = html;
+
+        // Examples: chia 2 cột SQL / NLP nếu backend trả kiểu này, 
+        // còn nếu backend đang trả mảng thường thì ta fallback về 1 cột.
+        let exHtml = "";
+
+        if (
+          schema.example_queries &&
+          (Array.isArray(schema.example_queries.sql) ||
+            Array.isArray(schema.example_queries.nlp))
+        ) {
+          exHtml += "<div class='examples-columns'>";
+
+          // SQL examples
+          exHtml += "<div class='examples-col'>";
+          if (schema.example_queries.sql && schema.example_queries.sql.length) {
+            exHtml += "<h3>SQL Examples</h3>";
+            exHtml += "<div class='table-wrapper'><table><tbody>";
+            schema.example_queries.sql.forEach((q) => {
+              exHtml += `<tr><td class="example" onclick="setQuery(\`${q}\`)">${q}</td></tr>`;
+            });
+            exHtml += "</tbody></table></div>";
+          }
+          exHtml += "</div>";
+
+          // NLP examples
+          exHtml += "<div class='examples-col'>";
+          if (schema.example_queries.nlp && schema.example_queries.nlp.length) {
+            exHtml += "<h3>NLP Examples</h3>";
+            exHtml += "<div class='table-wrapper'><table><tbody>";
+            schema.example_queries.nlp.forEach((q) => {
+              exHtml += `<tr><td class="example" onclick="setQuery(\`${q}\`)">${q}</td></tr>`;
+            });
+            exHtml += "</tbody></table></div>";
+          }
+          exHtml += "</div>";
+
+          exHtml += "</div>";
+        } else if (Array.isArray(schema.example_queries)) {
+          // Fallback: backend trả mảng 1 chiều
+          exHtml += "<div class='examples-columns'><div class='examples-col'>";
+          exHtml += "<h3>Examples</h3>";
+          exHtml += "<div class='table-wrapper'><table><tbody>";
+          schema.example_queries.forEach((q) => {
+            exHtml += `<tr><td class="example" onclick="setQuery(\`${q}\`)">${q}</td></tr>`;
+          });
+          exHtml += "</tbody></table></div></div></div>";
+        }
+
+        document.getElementById("examples-content").innerHTML = exHtml;
+      }
+
+      function toggleSchema() {
+        const content = document.getElementById("schema-content");
+        const currentDisplay = window.getComputedStyle(content).display;
+        content.style.display = currentDisplay === "none" ? "block" : "none";
+      }
+
+      function toggleExamples() {
+        const content = document.getElementById("examples-content");
+        const currentDisplay = window.getComputedStyle(content).display;
+        content.style.display = currentDisplay === "none" ? "block" : "none";
+      }
+
+      function setQuery(q) {
+        document.getElementById("queryInput").value = q;
+      }
+
+      async function executeQuery() {
+        const query = document.getElementById("queryInput").value.trim();
+        const resultsDiv = document.getElementById("results");
+
+        if (!query) {
+          resultsDiv.innerHTML =
+            "<div class='error'>Please enter a query!</div>";
+          return;
+        }
+
+        resultsDiv.innerHTML = "<div class='loading'>Processing</div>";
+
+        try {
+          const res = await fetch("/api/query", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query }),
+          });
+
+          const data = await res.json();
+
+          if (!data.success) {
+            let errorHtml = `<div class='error'>${data.error}</div>`;
+
+            if (data.input_type === "nlp") {
+              if (data.refined_question) {
+                errorHtml += `<div class='refined-question'>
+                                <strong>Original Question:</strong> ${
+                                  data.original_input || ""
+                                }<br>
+                                <strong>Refined Question:</strong> ${
+                                  data.refined_question
+                                }
+                            </div>`;
+              }
+
+              if (data.thinking_process && data.thinking_process.length > 0) {
+                errorHtml += `<div class='thinking-process'>
+                                <h3>Thinking Process (${data.thinking_process.length} rounds)</h3>`;
+
+                data.thinking_process.forEach((round) => {
+                  errorHtml += `<div class='thinking-round'>
+                                    <h4>Round ${round.round}</h4>
+                                    <div class='thinking-original'><strong>Before:</strong> ${round.original}</div>
+                                    <div class='thinking-refined'><strong>After:</strong> ${round.refined}</div>`;
+
+                  if (
+                    round.thinking &&
+                    round.thinking !== "No changes" &&
+                    !round.thinking.startsWith("Error:")
+                  ) {
+                    errorHtml += `<div class='thinking-detail'>${round.thinking}</div>`;
+                  }
+
+                  errorHtml += `</div>`;
+                });
+
+                errorHtml += `</div>`;
+              }
+            }
+
+            if (data.generated_sql) {
+              errorHtml += `<div class='generated-sql'><strong>Generated SQL:</strong><br><code>${data.generated_sql}</code></div>`;
+            }
+
+            resultsDiv.innerHTML = errorHtml;
+            return;
+          }
+
+          const inputTypeBadge = `<span class='input-type ${
+            data.input_type
+          }'>${data.input_type.toUpperCase()}</span>`;
+
+          let resultHtml = `<h2>Results (${data.count} rows) ${inputTypeBadge}</h2>`;
+
+          if (data.input_type === "nlp") {
+            if (data.refined_question) {
+              resultHtml += `<div class='refined-question'>
+                            <strong>Original Question:</strong> ${
+                              data.original_input || ""
+                            }<br>
+                            <strong>Refined Question:</strong> ${
+                              data.refined_question
+                            }
+                        </div>`;
+            }
+
+            if (data.thinking_process && data.thinking_process.length > 0) {
+              resultHtml += `<div class='thinking-process'>
+                            <h3>Thinking Process (${data.thinking_process.length} rounds)</h3>`;
+
+              data.thinking_process.forEach((round) => {
+                resultHtml += `<div class='thinking-round'>
+                                <h4>Round ${round.round}</h4>
+                                <div class='thinking-original'><strong>Before:</strong> ${round.original}</div>
+                                <div class='thinking-refined'><strong>After:</strong> ${round.refined}</div>`;
+
+                if (
+                  round.thinking &&
+                  round.thinking !== "Không có thay đổi" &&
+                  !round.thinking.startsWith("Lỗi:")
+                ) {
+                  resultHtml += `<div class='thinking-detail'>${round.thinking}</div>`;
+                }
+
+                resultHtml += `</div>`;
+              });
+
+              resultHtml += `</div>`;
+            }
+
+            if (data.generated_sql) {
+              resultHtml += `<div class='generated-sql'>
+                            <strong>Generated SQL:</strong><br>
+                            <code>${data.generated_sql}</code>
+                        </div>`;
+            }
+          }
+
+          if (data.count === 0) {
+            resultHtml += "<p>No results found.</p>";
+            resultsDiv.innerHTML = resultHtml;
+            return;
+          }
+
+          const cols = Object.keys(data.data[0]);
+          let table = `<div class='table-wrapper'><table><thead><tr>`;
+          cols.forEach((c) => (table += `<th>${c}</th>`));
+          table += "</tr></thead><tbody>";
+
+          data.data.forEach((row) => {
+            table += "<tr>";
+            cols.forEach((c) => (table += `<td>${row[c]}</td>`));
+            table += "</tr>";
+          });
+
+          table += "</tbody></table></div>";
+
+          resultsDiv.innerHTML = resultHtml + table;
+        } catch (error) {
+          resultsDiv.innerHTML = `<div class='error'>Connection error: ${error.message}</div>`;
+        }
+      }
+
+      function clearQuery() {
+        document.getElementById("queryInput").value = "";
+        document.getElementById("results").innerHTML = "";
+      }
+
+      document.getElementById("queryInput").addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "Enter") executeQuery();
+      });
+    </script>
+  </body>
+</html>
